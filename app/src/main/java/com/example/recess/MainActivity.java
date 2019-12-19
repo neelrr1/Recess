@@ -3,6 +3,7 @@ package com.example.recess;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -13,7 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListAdapter;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,10 +38,12 @@ public class MainActivity extends AppCompatActivity {
         final Context applicationContext = this.getApplicationContext();
         final Activity activity = this;
 
-        final TextView text = findViewById(R.id.text);
         final Button button = findViewById(R.id.login);
         final EditText username = findViewById(R.id.username);
         final EditText password = findViewById(R.id.password);
+        final ProgressBar progressBar = findViewById(R.id.progressBar);
+
+        progressBar.setVisibility(View.GONE);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,11 +57,14 @@ public class MainActivity extends AppCompatActivity {
                 hideKeyboard(activity);
 
                 try {
+                    progressBar.setVisibility(View.VISIBLE);
                     user = APIFuncs.login(baseURL, username.getText().toString(), password.getText().toString());
-                    text.setText(user.toString());
+                    Intent intent = new Intent(MainActivity.this, CourseView.class);
+                    intent.putExtra("user", user);
+                    MainActivity.this.startActivity(intent);
+                    progressBar.setProgress(100);
                 } catch (AuthException e) {
                     Toast.makeText(applicationContext, e.getMessage(), Toast.LENGTH_LONG).show();
-                    text.setText("Login Failed");
                 }
             }
         });
@@ -70,19 +76,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        final TextView text = findViewById(R.id.text);
-
         if (!prefs.getBoolean("domainIsSet", false)) {
             // Do first run stuff here then set 'firstrun' as false
             // using the following line to edit/commit prefs
-            text.setText("Domain Not Set");
             //text.setText(prefs.getString("baseURL", "Not set"));
             //TODO: Handle Clicking out of the Dialog and other shenanigans
             createAndShowDialog(this);
             //prefs.edit().putBoolean("domainIsSet", true).apply();
         }
-
-        text.setText(prefs.getString("baseURL", "Not found"));
     }
 
     public static void hideKeyboard(Activity activity) {

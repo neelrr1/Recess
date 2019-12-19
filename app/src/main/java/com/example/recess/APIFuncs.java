@@ -88,6 +88,44 @@ public class APIFuncs {
 
         return out;
     }
+
+    //https://evhs.schoolloop.com/mapi/report_card?studentID=1500707860951
+
+    public static Course[] getCourses(Account user) throws AuthException {
+        String auth = "Basic " + Base64.encodeToString(String.format("%s:%s", user.username, user.password).getBytes(), Base64.URL_SAFE).trim();
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url(String.format("https://%s/mapi/report_card?studentID=%s", user.baseURL, user.userID))
+                .get()
+                .addHeader("Authorization", auth)
+                .build();
+
+        try {
+            Response response = client.newCall(request).execute();
+
+            if (response.code() == 401) {
+                throw new AuthException("Authorization failed while getting courses. Please check that the correct username and password were entered.");
+            }
+            JSONArray jsonResponse = new JSONArray(response.body().string());
+            response.body().close();
+
+            Course[] courses = new Course[jsonResponse.length()];
+
+            for(int i = 0; i < jsonResponse.length(); i++) {
+                JSONObject jsonCourse = jsonResponse.getJSONObject(i);
+                courses[i] = new Course(jsonCourse);
+            }
+
+            return courses;
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            Log.e("Recess", e.getClass().getSimpleName(), e);
+        }
+
+        return null;
+    }
 }
 
 class AuthException extends Exception {
